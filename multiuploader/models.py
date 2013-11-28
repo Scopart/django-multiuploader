@@ -1,20 +1,13 @@
+import datetime
+from hashlib import sha1
 import os
 import time
-import datetime
-import multiuploader.default_settings as DEFAULTS
 
-from hashlib import sha1
-
-from django.db import models
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.utils.safestring import mark_safe
+from django.db import models
 from django.utils.text import get_valid_filename
-from django.core.files.storage import default_storage
 from django.utils.translation import ugettext_lazy as _
-
-
-
+import multiuploader.default_settings as DEFAULTS
 from multiuploader.utils import generate_safe_pk
 
 
@@ -42,6 +35,7 @@ class BaseAttachment(models.Model):
     def __unicode__(self):
         return u'%s' % self.filename
 
+
 class MultiuploaderFile(BaseAttachment):
     def _upload_to(instance, filename):
         upload_path = getattr(settings, 'MULTIUPLOADER_FILES_FOLDER', DEFAULTS.MULTIUPLOADER_FILES_FOLDER)
@@ -61,6 +55,11 @@ class MultiuploaderFile(BaseAttachment):
     def save(self, *args, **kwargs):
         self.filename = os.path.basename(self.file.path)
         return super(MultiuploaderFile, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """delete -- Remove to leave file."""
+        self.file.delete(False)
+        super(MultiuploaderFile, self).delete(*args, **kwargs)
 
     class Meta:
         verbose_name = _('multiuploader file')

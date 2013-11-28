@@ -80,7 +80,8 @@ MULTIUPLOADER_FORMS_SETTINGS = {
             'audio/x-ms-wax',
             'audio/vnd.rn-realaudio',
             'audio/vnd.wave',
-            'audio/webm'
+            'audio/webm',
+            'application/octet-stream',
         ],
         'MAX_FILE_SIZE': 10485760,
         'MAX_FILE_NUMBER': 5,
