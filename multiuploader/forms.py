@@ -86,6 +86,12 @@ class MultiUploadForm(forms.Form):
 
         return content
 
+    class Media:
+        css = {
+            'all': ('multiuploader/styles/jquery-ui.css', 'multiuploader/styles/jquery.fileupload-ui.css',),
+        }
+        js = ('multiuploader/scripts/jquery-ui.min.js', 'multiuploader/scripts/jquery.tmpl.min.js', 'multiuploader/scripts/jquery.iframe-transport.js', 'multiuploader/scripts/jquery.fileupload.js', 'multiuploader/scripts/jquery.fileupload-ui.js', 'multiuploader/scripts/collectfiles.js', 'multiuploader/scripts/multiuploader.js',)
+
 
 class MultiuploaderMultiDeleteForm(forms.Form):
     id = MultiuploaderField()
