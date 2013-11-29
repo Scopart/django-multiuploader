@@ -1,47 +1,35 @@
 import os
 import re
-import magic
 
 from django import forms
 from django.conf import settings
 from django.utils import simplejson
 from django.utils.html import mark_safe
-from django.utils.translation import ugettext_lazy as _
-from django.template.defaultfilters import filesizeformat
-
-from utils import format_file_extensions
-
+import magic
 import multiuploader.default_settings as DEFAULTS
+from utils import format_file_extensions
 
 
 class MultiuploadWidget(forms.MultipleHiddenInput):
-    def __init__(self, attrs={}):
-        super(MultiuploadWidget, self).__init__(attrs)
+    def __init__(self, attrs=None, choices=()):
+        super(MultiuploadWidget, self).__init__(attrs, choices)
 
-    def render(self, name, value, attrs=None):
-        widget_ = super(MultiuploadWidget, self).render(name, value, attrs)
-        output = '<div id="hidden_container" style="display:none;">%s</div>' % widget_
+    def render(self, name, value, attrs=None, choices=()):
+        parent_widget = super(MultiuploadWidget, self).render(name, value, attrs, choices)
+        output = '<div id="multiuploader-fields" style="display:none;">%s</div>' % parent_widget
         return mark_safe(output)
 
 
 class MultiuploaderField(forms.MultiValueField):
     widget = MultiuploadWidget()
 
-    def formfield(self, **kwargs):
-        kwargs['widget'] = MultiuploadWidget
-        return super(MultiuploaderField, self).formfield(**kwargs)
-
-    def validate(self, values):
-        super(MultiuploaderField, self).validate(values)
-
     def clean(self, values):
         super(MultiuploaderField, self).clean(values)
         return values
 
-    def compress(self, value):
-        if value:
-            return value
-
+    def compress(self, data_list):
+        if data_list:
+            return data_list.join(',')
         return None
 
 
@@ -88,9 +76,9 @@ class MultiUploadForm(forms.Form):
 
     class Media:
         css = {
-            'all': ('multiuploader/styles/jquery-ui.css', 'multiuploader/styles/jquery.fileupload-ui.css',),
+            'all': ('multiuploader/styles/jquery.fileupload.css', 'multiuploader/styles/jquery.fileupload-ui.css',),
         }
-        js = ('multiuploader/scripts/jquery-ui.min.js', 'multiuploader/scripts/jquery.tmpl.min.js', 'multiuploader/scripts/jquery.iframe-transport.js', 'multiuploader/scripts/jquery.fileupload.js', 'multiuploader/scripts/jquery.fileupload-ui.js', 'multiuploader/scripts/collectfiles.js', 'multiuploader/scripts/multiuploader.js',)
+        js = ('multiuploader/scripts/jquery.ui.widget.js', 'multiuploader/scripts/tmpl.min.js', 'multiuploader/scripts/load-image.min.js', 'multiuploader/scripts/canvas-to-blob.min.js', 'multiuploader/scripts/jquery.iframe-transport.js', 'multiuploader/scripts/jquery.fileupload.js', 'multiuploader/scripts/jquery.fileupload-process.js', 'multiuploader/scripts/jquery.fileupload-image.js', 'multiuploader/scripts/jquery.fileupload-audio.js', 'multiuploader/scripts/jquery.fileupload-video.js', 'multiuploader/scripts/jquery.fileupload-validate.js', 'multiuploader/scripts/jquery.fileupload-ui.js', 'multiuploader/scripts/multiuploader.js',)
 
 
 class MultiuploaderMultiDeleteForm(forms.Form):

@@ -2,124 +2,153 @@
 
 <script type="text/javascript">
     window.multiuploader = {
-        form_selector: '{{form_selector}}',
-        target_form_fieldname: '{{target_form_fieldname}}',
-        target_form_fieldname: '{{ target_form_fieldname }}',
+        csrftoken: '{{csrf_token}}',
         multiuploader_form_options: {{ multiuploader_form.options|safe }},
         url: "{% url 'multiuploader' %}",
         number_files_attached: {{ number_files_attached|default:"0" }},
-        lock_while_uploading: {% if lock_while_uploading %}true{% else %}false{% endif %},
+        target_form_fieldname: '{{target_form_fieldname}}',
+        url_get: "{% url 'multi_get_files' target_form_fieldname %}",
         translation: {
             "Start": "{% trans "Start" %}",
             "Stop": "{% trans "Stop" %}",
             "Delete": "{% trans "Delete" %}",
             "Cancel": "{% trans "Cancel" %}",
             "Error": "{% trans "Error" %}",
-            "File is too big": "A imagem é muito grande.",
-            "File is too small": "A imagem é muito pequena",
-            "Filetype not allowed": "O arquivo que você enviou não é uma imagem, ou não conhecemos o formato em que você enviou.",
-            "Max number of files exceeded": "Você tentou enviar mais imagens do que o sistema permite.",
-            "File exceeds upload_max_filesize": "A imagem enviada ultrapassou o limite de upload.",
-            "File exceeds MAX_FILE_SIZE (HTML form directive)": "A imagem ultrapassa o tamanho máximo de MAX_FILE_SIZE.",
-            "File is too small": "A imagem é muito pequena.",
-            "File was only partially uploaded": "Só uma parte da imagem foi enviada.",
-            "No File was uploaded": "Nenhuma imagem foi enviada.",
-            "Missing a temporary folder": "Não encontramos uma pasta temporária para salvar suas imagens.",
-            "Failed to write file to disk": "Falha ao tentar salvar sua imagem no disco.",
-            "File upload stopped by extension": "Envio de imagens foi interrompido por uma extensão de seu navegador.",
-            "Empty file upload result": "A imagem que você tentou enviar está vazia."
+            "Processing": "{% trans "Processing..." %}",
+            "File is too big": "{% trans "File is too big" %}",
+            "File is too small": "{% trans "File is too small" %}",
+            "Filetype not allowed": "{% trans "Filetype not allowed" %}",
+            "Max number of files exceeded": "{% trans "Max number of files exceeded" %}",
+            "File exceeds upload_max_filesize": "{% trans "File exceeds maximum upload limit" %}",
+            "File exceeds MAX_FILE_SIZE (HTML form directive)": "{% trans "File exceeds maximum size of upload" %}",
+            "File is too small": "{% trans "File is too small" %}",
+            "File was only partially uploaded": "{% trans "File was only partially uploaded" %}",
+            "No File was uploaded": "{% trans "No File was uploaded" %}",
+            "Missing a temporary folder": "{% trans "Missing a temporary folder" %}",
+            "Failed to write file to disk": "{% trans "Failed to write file to disk" %}",
+            "File upload stopped by extension": "{% trans "File upload stopped by extension" %}",
+            "Empty file upload result": "{% trans "Empty file upload result" %}"
         }
     };
 </script>
 
-<div id="{{ wrapper_element_id }}">
-	{% block widget %}
-	{% form_type type %}
-    <meta charset="utf-8">
-
-    <div id="{{ target_form_fieldname }}" style="display:none;">
-        <div class="fileupload-buttonbar">
-            <label class="fileinput-button">
-            <span>{% trans "Append files" %}</span>
-                <!--<input id="id_file" type="file" name="file" multiple>-->
+<!-- Redirect browsers with JavaScript disabled to the origin page -->
+<form id="fileupload" action="{% url 'multiuploader' %}" method="POST" enctype="multipart/form-data">
+    {% include 'multiuploader/noscript.html' %}
+    {% form_type type %}
+    {% csrf_token %}
+    <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
+    <div class="row fileupload-buttonbar">
+        <div class="col-lg-7">
+            <!-- The fileinput-button span is used to style the file input field as button -->
+            <span class="btn btn-success fileinput-button">
+                <i class="glyphicon glyphicon-plus"></i>
+                <span>{% trans "Add files..." %}</span>
                 {{ multiuploader_form.file }}
-            </label>
-        <button type="button" class="delete">{% trans "Delete files" %}</button>
+            </span>
+            <button type="submit" class="btn btn-primary start">
+                <i class="glyphicon glyphicon-upload"></i>
+                <span>{% trans "Start upload" %}</span>
+            </button>
+            <button type="reset" class="btn btn-warning cancel">
+                <i class="glyphicon glyphicon-ban-circle"></i>
+                <span>{% trans "Cancel upload" %}</span>
+            </button>
+            <button type="button" class="btn btn-danger delete">
+                <i class="glyphicon glyphicon-trash"></i>
+                <span>{% trans "Delete" %}</span>
+            </button>
+            <input type="checkbox" class="toggle">
+            <!-- The global file processing state -->
+            <span class="fileupload-process"></span>
+        </div>
+        <!-- The global progress state -->
+        <div class="col-lg-5 fileupload-progress fade">
+            <!-- The global progress bar -->
+            <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar progress-bar-info" style="width:0%;"></div>
+            </div>
+            <!-- The extended global progress state -->
+            <div class="progress-extended">&nbsp;</div>
+        </div>
     </div>
+    <!-- The table listing the files available for upload/download -->
+    <table role="presentation" class="fileupload-content table table-striped"><tbody class="files"></tbody></table>
 
-    <div class="fileupload-content">
-    <table class="files"></table>
-        <div class="fileupload-progressbar"></div>
-            <div id="help">
-                <p>{% trans "You can choose multiple files at once, by holding Ctrl or Cmd (on Mac) button, or just Drag'n'drop files here."%}</p>
-       		</div>
-       </div>
-    </div>
-
-	{% verbatim %}
-	<script id="template-upload" type="text/x-jquery-tmpl">
-        <tr class="template-upload{{if error}} ui-state-error{{/if}}">
-            <td class="preview"></td>
-            <td class="name">${name}</td>
-            <td class="size">${sizef}</td>
-            {{if error}}
-            <td class="error" colspan="2">${multiuploader.translation["Error"]}:
-                {{if error === 'maxFileSize'}}${multiuploader.translation["File is too big"]}
-                {{else error === 'minFileSize'}}${multiuploader.translation["File is too small"]}
-                {{else error === 'acceptFileTypes'}}${multiuploader.translation["Filetype not allowed"]}
-                {{else error === 'maxNumberOfFiles'}}${multiuploader.translation["Max number of files exceeded"]}
-                {{else}}
-                ${error}
-                {{/if}}
+    {% verbatim %}
+    <script id="template-upload" type="text/x-tmpl">
+    {% for (var i=0, file; file=o.files[i]; i++) { %}
+        <tr class="template-upload fade">
+            <td>
+                <span class="preview"></span>
             </td>
-            {{else}}
-            <td class="progress"><div></div></td>
-            <td class="start"><button>${multiuploader.translation["Start"]}</button></td>
-            {{/if}}
-            <td class="cancel"><button>${multiuploader.translation["Cancel"]}</button></td>
-        </tr>
-    </script>
-
-	<script id="template-download" type="text/x-jquery-tmpl">
-        <tr class="template-download{{if error}} ui-state-error{{/if}}">
-            {{if error}}
-            <td></td>
-            <td class="name">${name}</td>
-            <td class="size">${sizef}</td>
-            <td class="error" colspan="2">${multiuploader.translation["Error"]}:
-                {{if error === 1}}${multiuploader.translation["File exceeds upload_max_filesize"]}
-                {{else error === 2}}${multiuploader.translation["File exceeds MAX_FILE_SIZE (HTML form directive)"]}
-                {{else error === 3}}${multiuploader.translation["File was only partially uploaded"]}
-                {{else error === 4}}${multiuploader.translation["No File was uploaded"]}
-                {{else error === 5}}${multiuploader.translation["Missing a temporary folder"]}
-                {{else error === 6}}${multiuploader.translation["Failed to write file to disk"]}
-                {{else error === 7}}${multiuploader.translation["File upload stopped by extension"]}
-                {{else error === 'maxFileSize'}}${multiuploader.translation["File is too big"]}
-                {{else error === 'minFileSize'}}${multiuploader.translation["File is too small"]}
-                {{else error === 'acceptFileTypes'}}${multiuploader.translation["Filetype not allowed"]}
-                {{else error === 'maxNumberOfFiles'}}${multiuploader.translation["Max number of files exceeded"]}
-                {{else error === 'uploadedBytes'}}${multiuploader.translation["Uploaded bytes exceed file size"]}
-                {{else error === 'emptyResult'}}${multiuploader.translation["Empty file upload result"]}
-                {{else}}${error}
-                {{/if}}
+            <td>
+                <p class="name">{%=file.name%}</p>
+                <strong class="error text-danger"></strong>
             </td>
-            {{else}}
-            <td class="preview">
-                {{if thumbnail_url}}
-                <a href="${url}"><img src="${thumbnail_url}"></a>
-                {{/if}}
+            <td>
+                <p class="size">{%=multiuploader.translation["Processing"]%}</p>
+                <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-bar progress-bar-info" style="width:0%;"></div></div>
             </td>
-            <td class="name">
-                <a id="${id}" class="filelink" href="${url}">${name}</a>
-            </td>
-            <td class="size">${sizef}</td>
-            <td colspan="2"></td>
-            {{/if}}
-            <td class="delete">
-                <button data-type="${delete_type}" data-url="${delete_url}">${multiuploader.translation["Delete"]}</button>
+            <td>
+                {% if (!i && !o.options.autoUpload) { %}
+                    <button class="btn btn-primary start" disabled>
+                        <i class="glyphicon glyphicon-upload"></i>
+                        <span>{%=multiuploader.translation["Start"]%}</span>
+                    </button>
+                {% } %}
+                {% if (!i) { %}
+                    <button class="btn btn-warning cancel">
+                        <i class="glyphicon glyphicon-ban-circle"></i>
+                        <span>{%=multiuploader.translation["Cancel"]%}</span>
+                    </button>
+                {% } %}
             </td>
         </tr>
+    {% } %}
     </script>
-	{% endverbatim %}
-    {% endblock %}
-</div>
+    <!-- The template to display files available for download -->
+    <script id="template-download" type="text/x-tmpl">
+    {% for (var i=0, file; file=o.files[i]; i++) { %}
+        <tr class="template-download fade">
+            <td>
+                <span class="preview">
+                    {% if (file.thumbnailUrl) { %}
+                        <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
+                    {% } %}
+                </span>
+            </td>
+            <td>
+                <p class="name">
+                    {% if (file.url) { %}
+                        <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
+                    {% } else { %}
+                        <span>{%=file.name%}</span>
+                    {% } %}
+                </p>
+                {% if (file.error) { %}
+                    <div><span class="label label-danger">{%=multiuploader.translation["Error"]%}</span> {%=file.error%}</div>
+                {% } %}
+            </td>
+            <td>
+                <span class="size">{%=o.formatFileSize(file.size)%}</span>
+            </td>
+            <td>
+                {% if (file.deleteUrl) { %}
+                    <button class="btn btn-danger delete" data-type="{%=file.deleteType%}" data-url="{%=file.deleteUrl%}"{% if (file.deleteWithCredentials) { %} data-xhr-fields='{"withCredentials":true}'{% } %}>
+                        <i class="glyphicon glyphicon-trash"></i>
+                        <span>{%=multiuploader.translation["Delete"]%}</span>
+                    </button>
+                    <input type="checkbox" name="delete" value="1" class="toggle">
+                {% } else { %}
+                    <button class="btn btn-warning cancel">
+                        <i class="glyphicon glyphicon-ban-circle"></i>
+                        <span>{%=multiuploader.translation["Cancel"]%}</span>
+                    </button>
+                {% } %}
+            </td>
+        </tr>
+    {% } %}
+    </script>
+    {% endverbatim %}
+</form>

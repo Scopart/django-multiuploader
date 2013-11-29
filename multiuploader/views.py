@@ -101,7 +101,7 @@ def multiuploader(request, noajax=False):
 
         #writing file manually into model
         #because we don't need form of any type.
-        
+
         fl = MultiuploaderFile()
         fl.filename = filename
         fl.file = file
@@ -115,25 +115,25 @@ def multiuploader(request, noajax=False):
             thumb_url = get_thumbnail(fl.file, "80x80", quality=50)
         except Exception as e:
             log.error(e)
-            
+
         #generating json response array
         result = [{"id": fl.id,
                    "name": filename,
                    "size": file_size,
                    "url": reverse('multiuploader_file_link', args=[fl.pk]),
-                   "thumbnail_url": thumb_url,
-                   "delete_url": reverse('multiuploader_delete', args=[fl.pk]),
-                   "delete_type": "POST", }]
+                   "thumbnailUrl": thumb_url,
+                   "deleteUrl": reverse('multiuploader_delete', args=[fl.pk]),
+                   "deleteType": "POST", }]
 
         response_data = simplejson.dumps(result)
-        
+
         #checking for json data type
         #big thanks to Guy Shapiro
-        
+
         if noajax:
             if request.META['HTTP_REFERER']:
                 redirect(request.META['HTTP_REFERER'])
-        
+
         if "application/json" in request.META['HTTP_ACCEPT_ENCODING']:
             mimetype = 'application/json'
         else:
@@ -158,7 +158,7 @@ def multi_get_files(request, fieldname, noajax=False):
         signer = Signer()
 
         try:
-            form_type = signer.unsign(request.GET.get(u"form_type"))
+            signer.unsign(request.GET.get(u"form_type"))
         except BadSignature:
             response_data = [{"error": _("Tampering detected!")}]
             return HttpResponse(simplejson.dumps(response_data))
@@ -167,13 +167,13 @@ def multi_get_files(request, fieldname, noajax=False):
         result = []
         for p in request.GET.getlist(fieldname):
             fl = MultiuploaderFile.objects.get(id=p)
-    
+
             thumb_url = ""
             try:
                 thumb_url = get_thumbnail(fl.file, "80x80", quality=50)
             except Exception as e:
                 log.error(e)
-                
+
             #generating json response array
             result.append({"id": fl.id,
                        "name": fl.filename,
@@ -184,14 +184,14 @@ def multi_get_files(request, fieldname, noajax=False):
                        "delete_type": "POST", })
 
         response_data = simplejson.dumps(result)
-        
+
         #checking for json data type
         #big thanks to Guy Shapiro
-        
+
         if noajax:
             if request.META['HTTP_REFERER']:
                 redirect(request.META['HTTP_REFERER'])
-        
+
         if "application/json" in request.META['HTTP_ACCEPT_ENCODING']:
             mimetype = 'application/json'
         else:
