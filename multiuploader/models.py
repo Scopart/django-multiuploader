@@ -59,7 +59,8 @@ class BaseMultiuploaderFile(BaseAttachment):
     file = models.FileField(upload_to=_upload_to, max_length=255)
 
     def save(self, *args, **kwargs):
-        self.filename = os.path.basename(self.file.path)
+        if self.filename is None:
+            self.filename = os.path.basename(self.file.path)
         return super(BaseMultiuploaderFile, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
