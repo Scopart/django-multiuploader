@@ -17,7 +17,7 @@ function csrfSafeMethod(method) {
 }
 jQuery(function($) {
   'use strict';
-
+  var deleteAll = false;
   var opts = multiuploader.multiuploader_form_options;
   // Making new RegExp from django string
   opts.url = multiuploader.url;
@@ -30,10 +30,19 @@ jQuery(function($) {
     return [];
   };
 
+  $('#fileupload .fileupload-buttonbar button.delete-all').on('click', function(e){
+    deleteAll = confirm('Are you sure you want to delete this files?');
+    if( deleteAll )
+    {
+      $('#fileupload .fileupload-buttonbar button.delete').trigger('click');
+    }
+    return deleteAll;
+  });
+
   // Initialize the jQuery File Upload widget:
   $('#fileupload').fileupload(opts);
   $('#fileupload').bind('fileuploaddestroy', function(e, data) {
-    if (confirm("Are you sure you want to delete this file?")) {
+    if (deleteAll || confirm("Are you sure you want to delete this file?")) {
       if (data.url) {
         data.beforeSend = function(xhr, settings) {
           if (!csrfSafeMethod(settings.type)) {
@@ -41,6 +50,7 @@ jQuery(function($) {
           }
         };
       }
+      deleteAll = false;
     }
   });
 
