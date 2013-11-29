@@ -5,10 +5,16 @@ import time
 
 from django.conf import settings
 from django.db import models
+from django.db.models.loading import get_model as django_get_model
 from django.utils.text import get_valid_filename
 from django.utils.translation import ugettext_lazy as _
 import multiuploader.default_settings as DEFAULTS
 from multiuploader.utils import generate_safe_pk
+
+
+def get_model():
+    model_name = getattr(settings, 'MULTIUPLOADER_MODEL', DEFAULTS.MULTIUPLOADER_MODEL)
+    return django_get_model( *model_name.split('.',1) )
 
 
 class BaseAttachment(models.Model):
@@ -36,7 +42,7 @@ class BaseAttachment(models.Model):
         return u'%s' % self.filename
 
 
-class MultiuploaderFile(BaseAttachment):
+class BaseMultiuploaderFile(BaseAttachment):
     def _upload_to(instance, filename):
         upload_path = getattr(settings, 'MULTIUPLOADER_FILES_FOLDER', DEFAULTS.MULTIUPLOADER_FILES_FOLDER)
 
@@ -54,13 +60,18 @@ class MultiuploaderFile(BaseAttachment):
 
     def save(self, *args, **kwargs):
         self.filename = os.path.basename(self.file.path)
-        return super(MultiuploaderFile, self).save(*args, **kwargs)
+        return super(BaseMultiuploaderFile, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """delete -- Remove to leave file."""
         self.file.delete(False)
-        super(MultiuploaderFile, self).delete(*args, **kwargs)
+        super(BaseMultiuploaderFile, self).delete(*args, **kwargs)
 
+    class Meta:
+        abstract = True
+
+
+class MultiuploaderFile(BaseMultiuploaderFile):
     class Meta:
         verbose_name = _('multiuploader file')
         verbose_name_plural = _('multiuploader files')

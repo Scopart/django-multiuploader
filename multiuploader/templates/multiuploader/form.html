@@ -125,6 +125,7 @@
                     {% } else { %}
                         <span>{%=file.name%}</span>
                     {% } %}
+                    <input type="hidden" value="{%=file.id%}" class="id" />
                 </p>
                 {% if (file.error) { %}
                     <div><span class="label label-danger">{%=multiuploader.translation["Error"]%}</span> {%=file.error%}</div>
@@ -151,4 +152,7 @@
     {% } %}
     </script>
     {% endverbatim %}
+
+    {{multiuploader_form.media.css}}
+    {{multiuploader_form.media.js}}
 </form>

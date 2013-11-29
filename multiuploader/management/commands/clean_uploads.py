@@ -4,7 +4,10 @@ import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
 import multiuploader.default_settings as DEFAULTS
-from multiuploader.models import MultiuploaderFile
+from multiuploader.models import get_model
+
+
+MultiuploaderFile = get_model()
 
 
 class Command(BaseCommand):

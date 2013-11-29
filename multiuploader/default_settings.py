@@ -10,6 +10,14 @@ MULTIUPLOADER_FILE_EXPIRATION_TIME = 3600
 
 MULTIUPLOADER_FILES_FOLDER = 'multiuploader'
 
+MULTIUPLOADER_MODEL = 'multiuploader.MultiuploaderFile'
+
+MULTIUPLOADER_FORM_MEDIA = {
+    'css': {
+        'all': ('multiuploader/styles/jquery.fileupload.css', 'multiuploader/styles/jquery.fileupload-ui.css',),
+    },
+    'js': ('multiuploader/scripts/jquery-1.10.2.min.js', 'multiuploader/scripts/jquery.ui.widget.js', 'multiuploader/scripts/tmpl.min.js', 'multiuploader/scripts/load-image.min.js', 'multiuploader/scripts/canvas-to-blob.min.js', 'multiuploader/scripts/jquery.iframe-transport.js', 'multiuploader/scripts/jquery.fileupload.js', 'multiuploader/scripts/jquery.fileupload-process.js', 'multiuploader/scripts/jquery.fileupload-image.js', 'multiuploader/scripts/jquery.fileupload-audio.js', 'multiuploader/scripts/jquery.fileupload-video.js', 'multiuploader/scripts/jquery.fileupload-validate.js', 'multiuploader/scripts/jquery.fileupload-ui.js', 'multiuploader/scripts/multiuploader.js',)
+}
 
 MULTIUPLOADER_FORMS_SETTINGS = {
     'default': {

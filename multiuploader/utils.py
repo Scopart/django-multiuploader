@@ -1,40 +1,32 @@
-import os
-import urllib
-import logging
 import datetime
-import mimetypes
-
-from wsgiref.util import FileWrapper
-
 from hashlib import sha1
+import logging
+import os
 from random import choice
+import urllib
 
+from PIL import Image, ImageOps
+from django.conf import settings
 from django.core.files import File
-from django.http import HttpResponse
-from django.conf import settings,Settings
 from django.core.files.uploadedfile import UploadedFile
+from django.http import HttpResponse
+import mimetypes
+from wsgiref.util import FileWrapper
 
 log = logging
 
 
 def get_thumbnail(img, thumb_size, quality=80, format='JPG'):
-    from django.db.models import ImageField
-    from django.db.models.fields.files import ImageFieldFile
-    from PIL import Image, ImageOps
-    from django.forms import forms
-    from django.core.files.base import ContentFile
-    from django.utils.encoding import smart_str
-    import cStringIO
 
     thumb_size = thumb_size.split('x')
-        
+
     img.seek(0) # see http://code.djangoproject.com/ticket/8222 for details
     image = Image.open(img)
-    
+
     # Convert to RGB if necessary
     if image.mode not in ('L', 'RGB'):
         image = image.convert('RGB')
-        
+
     # get size
     thumb_w = int(thumb_size[0])
     thumb_h = int(thumb_size[1])
@@ -46,14 +38,12 @@ def get_thumbnail(img, thumb_size, quality=80, format='JPG'):
         thumb_url = '%s.%sx%s.%s' % (split[0],thumb_w,thumb_h,split[1])
     except:
         thumb_url = '%s.%sx%s' % (split,thumb_w,thumb_h)
-    io = cStringIO.StringIO()
     # PNG and GIF are the same, JPG is JPEG
     if format.upper()=='JPG':
         format = 'JPEG'
-    
+
     image2.save(thumb_url, format, quality=quality)
-    import settings
-    return thumb_url.replace(settings.MEDIA_ROOT, settings.MEDIA_URL).replace('//', '/') 
+    return thumb_url.replace(settings.MEDIA_ROOT, settings.MEDIA_URL).replace('//', '/')
 
 
 #Getting files here
@@ -72,40 +62,38 @@ def get_uploads_from_request(request):
         #getting file data for further manipulations
         if not u'files' in request.FILES:
             return []
-        
+
         for fl in request.FILES.getlist("files"):
             wrapped_file = UploadedFile(fl)
-            filename = wrapped_file.name
-            file_size = wrapped_file.file.size
             attachments.append({"file": fl, "date": datetime.datetime.now(), "name": wrapped_file.name})
-        
+
     return attachments
 
 def get_uploads_from_temp(ids):
     """Method returns of uploaded files"""
 
-    from models import MultiuploaderFile
+    from models import get_model
 
     ats = []
-    files = MultiuploaderFile.objects.filter(pk__in=ids)
-    
+    files = get_model().objects.filter(pk__in=ids)
+
     #Getting THE FILES
 
     for fl in files:
         ats.append({"file":File(fl.file), "date":fl.upload_date, "name":fl.filename})
-        
+
     return ats
 
 def get_uploads_from_model(instance, attr):
-    """Replaces attachment files from model to a given location, 
+    """Replaces attachment files from model to a given location,
        returns list of opened files of dict {file:'file',date:date,name:'filename'}"""
-    
+
     ats = []
     files = getattr(instance, attr)
 
     for fl in files.all():
         ats.append({"file": File(fl.file), "date": fl.upload_date, "name": fl.filename})
-            
+
     return ats
 
 def generate_safe_pk(self):
@@ -113,11 +101,11 @@ def generate_safe_pk(self):
         while 1:
             skey = getattr(settings, 'SECRET_KEY', 'asidasdas3sfvsanfja242aako;dfhdasd&asdasi&du7')
             pk = sha1('%s%s' % (skey, ''.join([choice('0123456789') for i in range(11)]))).hexdigest()
-           
+
             try:
                 self.__class__.objects.get(pk=pk)
             except:
-                return pk    
+                return pk
 
     return wrapped
 

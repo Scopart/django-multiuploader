@@ -1,22 +1,22 @@
 import logging
-from django.conf import settings
 
-from django.utils import simplejson
-from django.shortcuts import redirect
-from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404
-from django.utils.translation import ugettext as _
-from django.core.signing import Signer, BadSignature
 from django.core.files.uploadedfile import UploadedFile
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
-
-from utils import FileResponse
-from models import MultiuploaderFile
+from django.core.signing import Signer, BadSignature
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.utils import simplejson
+from django.utils.translation import ugettext as _
 from forms import MultiUploadForm, MultiuploaderMultiDeleteForm
-
+from models import get_model
+from utils import FileResponse
 from utils import get_thumbnail
 
 log = logging
+
+
+MultiuploaderFile = get_model()
 
 
 def multiuploader_delete_multiple(request, ok=False):
@@ -179,9 +179,9 @@ def multi_get_files(request, fieldname, noajax=False):
                        "name": fl.filename,
                        "size": fl.file.size,
                        "url": reverse('multiuploader_file_link', args=[fl.pk]),
-                       "thumbnail_url": thumb_url,
-                       "delete_url": reverse('multiuploader_delete', args=[fl.pk]),
-                       "delete_type": "POST", })
+                       "thumbnailUrl": thumb_url,
+                       "deleteUrl": reverse('multiuploader_delete', args=[fl.pk]),
+                       "deleteType": "POST", })
 
         response_data = simplejson.dumps(result)
 
